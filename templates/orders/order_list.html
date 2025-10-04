@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Мои заказы</h2>
+<a href="{% url 'order_create' %}">Создать новый заказ</a>
+
+<ul>
+  {% for order in orders %}
+    <li>
+      Заказ #{{ order.id }} — {{ order.book_type }} ({{ order.spreads }} разворотов) —
+      {{ order.price }} ₸ — статус: {{ order.get_status_display }}
+    </li>
+  {% empty %}
+    <li>Заказов пока нет</li>
+  {% endfor %}
+</ul>
+{% endblock %}

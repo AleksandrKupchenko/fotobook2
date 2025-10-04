@@ -1,0 +1,34 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>FotoBook — demo</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="{% url 'home' %}">Главная</a> |
+      <a href="{% url 'dashboard' %}">Личный кабинет</a> |
+      {% if user.is_authenticated %}
+        Привет, {{ user.username }} |
+        <a href="{% url 'logout' %}">Выйти</a>
+      {% else %}
+        <a href="{% url 'login' %}">Вход</a> |
+        <a href="{% url 'register' %}">Регистрация</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>Demo site — фотокниги</p>
+  </footer>
+
+  <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
