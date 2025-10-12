@@ -1,24 +1,28 @@
 from django import forms
-from .models import Order, OrderFile
-from PIL import Image
+from .models import Order
+from django.core.exceptions import ValidationError
 
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['book_type', 'spreads']
+        fields = [
+            'book_type', 'spreads', 'comment',
+            'delivery_type', 'delivery_address',
+            'payment_method'
+        ]
+        widgets = {
+            'comment': forms.Textarea(attrs={'rows':3}),
+            'delivery_address': forms.TextInput(attrs={'placeholder':'Улица, дом, кв. (если требуется)'}),
+        }
 
-class OrderFileForm(forms.ModelForm):
-    class Meta:
-        model = OrderFile
-        fields = ['file']
+    def clean(self):
+        cleaned = super().clean()
+        delivery = cleaned.get('delivery_type')
+        addr = cleaned.get('delivery_address')
+        payment = cleaned.get('payment_method')
 
-    def clean_file(self):
-        file = self.cleaned_data['file']
-        try:
-            img = Image.open(file)
-            width, height = img.size
-            if width < 2000 or height < 2000:
-                raise forms.ValidationError("Изображение слишком маленькое! Нужно минимум 2000x2000 пикселей.")
-        except Exception:
-            raise forms.ValidationError("Файл не является корректным изображением.")
-        return file
+        if delivery != 'pickup' and not addr:
+            raise ValidationError("При выборе доставки укажите адрес.")
+
+        # можно добавить дополнительные проверки для payment_method
+        return cleaned

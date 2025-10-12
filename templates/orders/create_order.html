@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Создать заказ — Расчёт стоимости, доставка и оплата</h2>
+
+<form method="post" enctype="multipart/form-data" id="orderForm">
+  {% csrf_token %}
+  {{ form.as_p }}
+
+  <label for="files">Файлы (несколько):</label>
+  <input type="file" id="files" name="files" accept="image/*" multiple />
+  <div id="filePreviews" style="display:flex; gap:10px; margin-top:10px;"></div>
+  <p id="fileWarning" style="color:red;"></p>
+
+  <p>
+    <strong>Итог:</strong>
+    <span id="price_breakdown">
+      Базовая: <span id="base_price">0</span> ₸ +
+      За развороты: <span id="spreads_price">0</span> ₸ +
+      Доставка: <span id="delivery_price">0</span> ₸ =
+      <strong id="total_price">0</strong> ₸
+    </span>
+  </p>
+
+  <button type="submit">Отправить заказ</button>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bookType = document.querySelector('#id_book_type');
+    const spreads = document.querySelector('#id_spreads');
+    const delivery = document.querySelector('#id_delivery_type');
+    const filesInput = document.getElementById('files');
+    const filePreviews = document.getElementById('filePreviews');
+    const fileWarning = document.getElementById('fileWarning');
+
+    const basePriceEl = document.getElementById('base_price');
+    const spreadsPriceEl = document.getElementById('spreads_price');
+    const deliveryPriceEl = document.getElementById('delivery_price');
+    const totalPriceEl = document.getElementById('total_price');
+
+    function getBasePrice() {
+        const type = bookType.value;
+        if (type === 'standard') return 10000;
+        if (type === 'premium') return 15000;
+        return 0;
+    }
+
+    function getDeliveryPrice() {
+        const val = delivery.value;
+        if (val === 'courier') return 2000;
+        if (val === 'pickup') return 0;
+        return 0;
+    }
+
+    function updatePrices() {
+        const base = getBasePrice();
+        const spreadsCount = parseInt(spreads.value || 0);
+        const spreadsPrice = spreadsCount * 2000;
+        const deliveryPrice = getDeliveryPrice();
+        const total = base + spreadsPrice + deliveryPrice;
+
+        basePriceEl.textContent = base;
+        spreadsPriceEl.textContent = spreadsPrice;
+        deliveryPriceEl.textContent = deliveryPrice;
+        totalPriceEl.textContent = total;
+    }
+
+    [bookType, spreads, delivery].forEach(el => {
+        if (el) {
+            el.addEventListener('change', updatePrices);
+            el.addEventListener('input', updatePrices);
+        }
+    });
+
+    updatePrices(); // первичный расчёт
+
+    // Превью и проверка файлов
+    filesInput.addEventListener('change', function() {
+        filePreviews.innerHTML = '';
+        fileWarning.textContent = '';
+        let invalidFound = false;
+
+        Array.from(filesInput.files).forEach(file => {
+            const img = document.createElement('img');
+            img.style.maxWidth = '100px';
+            img.style.maxHeight = '100px';
+            img.style.border = '1px solid #ccc';
+            img.style.borderRadius = '4px';
+            img.style.objectFit = 'cover';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                if (tempImg.width < 2000 || tempImg.height < 2000) {
+                    invalidFound = true;
+                    fileWarning.textContent = 'Ошибка: все изображения должны быть минимум 2000x2000!';
+                }
+            }
+            tempImg.src = URL.createObjectURL(file);
+
+            filePreviews.appendChild(img);
+        });
+    });
+
+    // Блокировка отправки формы, если есть маленькие файлы
+    const orderForm = document.getElementById('orderForm');
+    orderForm.addEventListener('submit', function(e) {
+        if (fileWarning.textContent) {
+            e.preventDefault();
+            alert('Нельзя отправить форму: есть файлы меньшего размера!');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,6 +1,34 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
-<h1>Добро пожаловать в FotoBook (демо)</h1>
-<p>Здесь фотографы создают заказы на печать фотокниг.</p>
-<a href="{% url 'register' %}">Зарегистрироваться</a>
+
+<!-- Блок приветствия -->
+<section class="welcome-text">
+  <h1>Добро пожаловать в FotoBook (демо)</h1>
+  <p>Здесь фотографы создают заказы на печать фотокниг.</p>
+  <a href="{% url 'register' %}" class="btn">Зарегистрироваться</a>
+</section>
+
+<!-- Баннер главной страницы -->
+<section class="hero">
+  <img src="{% static 'images/banner.jpg' %}" alt="Главный баннер" class="hero-image">
+  <div class="hero-overlay">
+    <h1>Создайте свою фотокнигу легко</h1>
+    <p>От идеи до готового альбома за несколько шагов</p>
+    <a href="{% url 'order_create' %}" class="btn">Создать заказ</a>
+  </div>
+</section>
+
+<!-- Статичное фото под баннером -->
+<section class="feature-image">
+  <h2>Примеры фотокниг</h2>
+  <div class="feature-gallery">
+    <img src="{% static 'images/feature.jpg' %}" alt="Пример фотокниги" class="feature-img">
+    <img src="{% static 'images/feature2.jpg' %}" alt="Пример фотокниги 2" class="feature-img">
+    <img src="{% static 'images/feature3.jpg' %}" alt="Пример фотокниги 3" class="feature-img">
+  </div>
+</section>
+
+
 {% endblock %}

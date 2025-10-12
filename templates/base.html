@@ -4,31 +4,55 @@
 <head>
   <meta charset="utf-8">
   <title>FotoBook — demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+  <!-- --------------------------
+       Шапка
+  -------------------------- -->
   <header>
-    <nav>
-      <a href="{% url 'home' %}">Главная</a> |
-      <a href="{% url 'dashboard' %}">Личный кабинет</a> |
-      {% if user.is_authenticated %}
-        Привет, {{ user.username }} |
-        <a href="{% url 'logout' %}">Выйти</a>
-      {% else %}
-        <a href="{% url 'login' %}">Вход</a> |
-        <a href="{% url 'register' %}">Регистрация</a>
-      {% endif %}
-    </nav>
+    <div class="header-container container">
+      <a href="{% url 'home' %}" class="logo">Fotobook</a>
+      <nav>
+        <div class="nav-links">
+          <a href="#" class="nav-item">Каталог</a>
+          <a href="#" class="nav-item">Схема работы</a>
+          <a href="#" class="nav-item">О нас</a>
+          <a href="#" class="nav-item">Новости</a>
+          <a href="#" class="nav-item">Контакты</a>
+        </div>
+        <div class="user-links">
+          {% if user.is_authenticated %}
+            <span class="username">{{ user.username }}</span>
+            <a href="{% url 'dashboard' %}" class="btn">Личный кабинет</a>
+            <form action="{% url 'logout' %}" method="post" class="logout-form">
+              {% csrf_token %}
+              <button type="submit">Выйти</button>
+            </form>
+          {% else %}
+            <a href="{% url 'login' %}" class="btn">Войти</a>
+          {% endif %}
+        </div>
+      </nav>
+    </div>
   </header>
 
-  <main>
-    {% block content %}{% endblock %}
+  <!-- --------------------------
+       Основной контент
+  -------------------------- -->
+  <main class="container">
+    {% block content %}
+    {% endblock %}
   </main>
 
+  <!-- --------------------------
+       Подвал
+  -------------------------- -->
   <footer>
-    <p>Demo site — фотокниги</p>
+    <div class="container">
+      <p>Demo site — фотокниги © 2025</p>
+    </div>
   </footer>
-
-  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

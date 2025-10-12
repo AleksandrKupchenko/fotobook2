@@ -1,3 +1,319 @@
-body { font-family: Arial, sans-serif; margin: 20px;}
-nav { margin-bottom: 15px; }
-h1, h2 { color: #333; }
+/* --------------------------
+   Общие стили
+-------------------------- */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f4f7fc;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* --------------------------
+   Шапка
+-------------------------- */
+header {
+  background: linear-gradient(to right, #4da6ff, #80c1ff);
+  padding: 15px 0;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 25px;
+}
+
+.nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.nav-item:hover {
+  opacity: 0.8;
+}
+
+.user-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.username {
+  color: #fff;
+  font-weight: 500;
+}
+
+.logout-form button {
+  background-color: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.logout-form button:hover {
+  background-color: #cc0000;
+}
+
+/* --------------------------
+   Блок приветствия
+-------------------------- */
+.welcome-text {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.welcome-text h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.welcome-text p {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+}
+
+.welcome-text .btn {
+  margin-top: 10px;
+}
+
+/* --------------------------
+   Баннер главной страницы
+-------------------------- */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.hero-overlay h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+}
+
+.hero-overlay p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.hero-overlay .btn {
+  font-size: 1rem;
+  padding: 12px 25px;
+  text-decoration: none;
+}
+
+/* --------------------------
+   Статичное фото под баннером
+-------------------------- */
+.feature-image {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.feature-image h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.feature-gallery {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.feature-gallery .feature-img {
+  width: 30%;
+  max-width: 300px;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+/* --------------------------
+   Таблица заказов в личном кабинете
+-------------------------- */
+#orders-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+#orders-table th, #orders-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+#orders-table th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+#orders-table tbody tr {
+  transition: background-color 0.3s ease;
+  border-radius: 5px;
+}
+
+/* Цвета по статусу */
+#orders-table tbody tr[data-status="new"] {
+  background-color: #f9f9f9;
+}
+
+#orders-table tbody tr[data-status="accepted"] {
+  background-color: #eaf3ff;
+}
+
+#orders-table tbody tr[data-status="printing"] {
+  background-color: #fff6e5;
+}
+
+#orders-table tbody tr[data-status="ready"] {
+  background-color: #eaffea;
+}
+
+/* Hover эффект */
+#orders-table tbody tr:hover {
+  background-color: #dbeeff;
+}
+
+/* Статус в селекте */
+.status-select {
+  padding: 4px 6px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
+}
+
+/* --------------------------
+   Кнопки
+-------------------------- */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+/* --------------------------
+   Подвал
+-------------------------- */
+footer {
+  background: linear-gradient(to right, #4da6ff, #80c1ff);
+  color: #fff;
+  text-align: center;
+  padding: 20px 0;
+  font-size: 14px;
+  margin-top: auto;
+}
+
+/* --------------------------
+   Адаптация под мобильные
+-------------------------- */
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  nav {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .user-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hero {
+    height: 300px;
+  }
+
+  .hero-overlay h1 {
+    font-size: 1.8rem;
+  }
+
+  .hero-overlay p {
+    font-size: 1rem;
+  }
+
+  .feature-gallery .feature-img {
+    width: 45%; /* на маленьких экранах по две картинки в ряд */
+  }
+}

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Личный кабинет</h2>
+<p>Добро пожаловать, {{ user.username }}!</p>
+
+{% if is_photographer %}
+  <p>Вы — фотограф. Ниже ваши заказы.</p>
+  <p><a href="{% url 'order_create' %}" class="btn btn-primary">Создать новый заказ</a></p>
+{% elif is_printer %}
+  <p>Вы — печатник. Ниже все заказы для печати.</p>
+{% endif %}
+
+{% if orders %}
+<table id="orders-table" style="border-collapse: collapse; width: 100%; border: 1px solid #ddd; font-size: 14px; margin-left: 20px;">
+  <thead style="background-color: #f5f5f5;">
+    <tr>
+      <th>ID</th>
+      <th>Клиент</th>
+      <th>Тип книги</th>
+      <th>Развороты</th>
+      <th>Комментарий</th>
+      <th>Статус</th>
+      <th>Создан</th>
+      {% if is_printer %}<th>Действия</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr data-order-id="{{ order.id }}" {% if is_printer %} style="
+          {% if order.status == 'new' %}background-color: #f9f9f9;
+          {% elif order.status == 'accepted' %}background-color: #eaf3ff;
+          {% elif order.status == 'printing' %}background-color: #fff6e5;
+          {% elif order.status == 'ready' %}background-color: #eaffea;
+          {% endif %}
+        "{% endif %}>
+      <td>{{ order.id }}</td>
+      <td>{{ order.user.username }}</td>
+      <td>{{ order.get_book_type_display }}</td>
+      <td>{{ order.spreads }}</td>
+      <td>{{ order.comment|default:"—" }}</td>
+      <td>
+        {% if is_printer %}
+          <select class="status-select">
+            {% for key, value in order.STATUS_CHOICES %}
+              <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          {{ order.get_status_display }}
+        {% endif %}
+      </td>
+      <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+      {% if is_printer %}
+      <td>
+        <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">Просмотреть</a>
+      </td>
+      {% endif %}
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="{% if is_printer %}8{% else %}7{% endif %}" style="text-align:center; padding:10px;">Нет заказов.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>У вас пока нет заказов.</p>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selects = document.querySelectorAll('.status-select');
+
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            const newStatus = this.value;
+            const tr = this.closest('tr');
+            const orderId = tr.getAttribute('data-order-id');
+
+            fetch("{% url 'update_order_status_ajax' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    new_status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    switch(newStatus) {
+                        case 'new':
+                            tr.style.backgroundColor = '#f9f9f9';
+                            break;
+                        case 'accepted':
+                            tr.style.backgroundColor = '#eaf3ff';
+                            break;
+                        case 'printing':
+                            tr.style.backgroundColor = '#fff6e5';
+                            break;
+                        case 'ready':
+                            tr.style.backgroundColor = '#eaffea';
+                            break;
+                        default:
+                            tr.style.backgroundColor = '';
+                    }
+                } else {
+                    console.error('Ошибка при обновлении статуса:', data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка AJAX:', err);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
