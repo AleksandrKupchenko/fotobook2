@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # сторонние
     'rest_framework',
     'corsheaders',
+    'channels',  # <-- добавлено для WebSocket
 
     # твои приложения
     'accounts',
@@ -67,7 +68,21 @@ TEMPLATES = [
     },
 ]
 
+# WSGI теперь можно оставить для обычного HTTP
 WSGI_APPLICATION = 'core.wsgi.application'
+
+# ASGI для Channels
+ASGI_APPLICATION = 'core.asgi.application'
+
+# Channels / Redis layer
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # <-- адрес Redis
+        },
+    },
+}
 
 
 # Database

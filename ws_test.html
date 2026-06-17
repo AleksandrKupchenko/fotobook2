@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Тест WebSocket /ws/printers/</h2>
+
+<p>Вы должны быть залогинены как пользователь в группе <strong>printers</strong>.</p>
+
+<button id="connectBtn">Подключиться</button>
+<button id="sendBtn" disabled>Отправить тест</button>
+
+<div id="log" style="margin-top:20px; white-space:pre-wrap; font-family:monospace;"></div>
+
+<script>
+  const logDiv = document.getElementById('log');
+  function log(msg) {
+    console.log(msg);
+    logDiv.textContent += msg + "\n";
+  }
+
+  let ws = null;
+
+  document.getElementById('connectBtn').addEventListener('click', () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      log("⚠️ Уже подключено");
+      return;
+    }
+
+    // Используем тот же хост и куки, что и Django
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${window.location.host}/ws/printers/`;
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      log("✅ WS connected");
+      document.getElementById('sendBtn').disabled = false;
+    };
+
+    ws.onmessage = (msg) => {
+      log("📩 Получено сообщение: " + msg.data);
+    };
+
+    ws.onerror = (e) => log("❌ WS error: " + e);
+
+    ws.onclose = (e) => {
+      log(`⚠️ WS closed, code=${e.code}, reason=${e.reason}`);
+      document.getElementById('sendBtn').disabled = true;
+    };
+  });
+
+  document.getElementById('sendBtn').addEventListener('click', () => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      log("⚠️ WS не подключен");
+      return;
+    }
+    const msg = JSON.stringify({message: "Привет от теста!"});
+    ws.send(msg);
+    log("📤 Отправлено: " + msg);
+  });
+</script>
+{% endblock %}

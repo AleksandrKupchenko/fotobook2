@@ -1,22 +1,34 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <h2>Личный кабинет</h2>
 <p>Добро пожаловать, {{ user.username }}!</p>
 
 {% if is_photographer %}
   <p>Вы — фотограф. Ниже ваши заказы.</p>
-  <p><a href="{% url 'order_create' %}" class="btn btn-primary">Создать новый заказ</a></p>
+  <p><a href="{% url 'select_product' %}" class="btn btn-primary">Создать новый заказ</a></p>
 {% elif is_printer %}
   <p>Вы — печатник. Ниже все заказы для печати.</p>
+  <form method="get" action="" style="margin: 10px 0;">
+    <label for="status">Фильтр по статусу:</label>
+    <select name="status" id="status" onchange="this.form.submit()">
+      <option value="all" {% if current_status == 'all' %}selected{% endif %}>Все</option>
+      <option value="new" {% if current_status == 'new' %}selected{% endif %}>Новые</option>
+      <option value="accepted" {% if current_status == 'accepted' %}selected{% endif %}>Принятые</option>
+      <option value="printing" {% if current_status == 'printing' %}selected{% endif %}>Печатаются</option>
+      <option value="ready" {% if current_status == 'ready' %}selected{% endif %}>Готовые</option>
+      <option value="archived" {% if current_status == 'archived' %}selected{% endif %}>В архиве</option>
+    </select>
+  </form>
 {% endif %}
 
 {% if orders %}
-<table id="orders-table" style="border-collapse: collapse; width: 100%; border: 1px solid #ddd; font-size: 14px; margin-left: 20px;">
+<div style="overflow-x:auto;">
+<table id="orders-table" style="border-collapse: collapse; width: 100%; border: 1px solid #ddd; font-size: 14px;">
   <thead style="background-color: #f5f5f5;">
     <tr>
       <th>ID</th>
       <th>Клиент</th>
+      <th>Тип продукта</th>
       <th>Тип книги</th>
       <th>Развороты</th>
       <th>Комментарий</th>
@@ -27,23 +39,20 @@
   </thead>
   <tbody>
     {% for order in orders %}
-    <tr data-order-id="{{ order.id }}" {% if is_printer %} style="
-          {% if order.status == 'new' %}background-color: #f9f9f9;
-          {% elif order.status == 'accepted' %}background-color: #eaf3ff;
-          {% elif order.status == 'printing' %}background-color: #fff6e5;
-          {% elif order.status == 'ready' %}background-color: #eaffea;
-          {% endif %}
-        "{% endif %}>
+    <tr data-order-id="{{ order.id }}">
       <td>{{ order.id }}</td>
       <td>{{ order.user.username }}</td>
-      <td>{{ order.get_book_type_display }}</td>
+      <td>{{ order.get_product_type_display }}</td>
+      <td>{{ order.get_book_type_display|default:"—" }}</td>
       <td>{{ order.spreads }}</td>
       <td>{{ order.comment|default:"—" }}</td>
       <td>
         {% if is_printer %}
           <select class="status-select">
             {% for key, value in order.STATUS_CHOICES %}
-              <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ value }}</option>
+              {% if key != 'sent' %}
+                <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ value }}</option>
+              {% endif %}
             {% endfor %}
           </select>
         {% else %}
@@ -53,70 +62,146 @@
       <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
       {% if is_printer %}
       <td>
-        <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">Просмотреть</a>
+        <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary" style="font-size: 12px;">Просмотреть</a>
+        <button type="button" class="btn btn-danger delete-btn" data-order-id="{{ order.id }}" style="font-size: 12px;">Удалить</button>
       </td>
       {% endif %}
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="{% if is_printer %}8{% else %}7{% endif %}" style="text-align:center; padding:10px;">Нет заказов.</td>
-    </tr>
+    <tr><td colspan="9" style="text-align:center;">Нет заказов.</td></tr>
     {% endfor %}
   </tbody>
 </table>
-{% else %}
-<p>У вас пока нет заказов.</p>
+</div>
 {% endif %}
 
+<!-- Модальное окно удаления -->
+<div id="deleteModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div style="background:white; padding:20px; border-radius:8px; max-width:400px;">
+    <h4 id="modalTitle">Удаление заказа</h4>
+    <p id="modalText"></p>
+    <div style="text-align:right; margin-top:20px;">
+      <button id="cancelDelete" class="btn btn-secondary">Отмена</button>
+      <button id="confirmDelete" class="btn btn-danger">Удалить</button>
+    </div>
+  </div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const selects = document.querySelectorAll('.status-select');
+document.addEventListener('DOMContentLoaded', () => {
 
-    selects.forEach(select => {
-        select.addEventListener('change', function() {
-            const newStatus = this.value;
-            const tr = this.closest('tr');
-            const orderId = tr.getAttribute('data-order-id');
+  let currentOrderId = null;
 
-            fetch("{% url 'update_order_status_ajax' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    order_id: orderId,
-                    new_status: newStatus
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.success) {
-                    switch(newStatus) {
-                        case 'new':
-                            tr.style.backgroundColor = '#f9f9f9';
-                            break;
-                        case 'accepted':
-                            tr.style.backgroundColor = '#eaf3ff';
-                            break;
-                        case 'printing':
-                            tr.style.backgroundColor = '#fff6e5';
-                            break;
-                        case 'ready':
-                            tr.style.backgroundColor = '#eaffea';
-                            break;
-                        default:
-                            tr.style.backgroundColor = '';
-                    }
-                } else {
-                    console.error('Ошибка при обновлении статуса:', data.error);
-                }
-            })
-            .catch(err => {
-                console.error('Ошибка AJAX:', err);
-            });
-        });
+  /* === Удаление === */
+  function attachDeleteHandlers() {
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.onclick = () => {
+        currentOrderId = btn.dataset.orderId;
+        document.getElementById('modalText').innerText = `Вы уверены, что хотите удалить заказ #${currentOrderId}?`;
+        document.getElementById('deleteModal').style.display = 'flex';
+      };
     });
+  }
+
+  document.getElementById('cancelDelete').onclick = () => {
+    document.getElementById('deleteModal').style.display = 'none';
+  };
+
+  document.getElementById('confirmDelete').onclick = () => {
+    if (!currentOrderId) return;
+    fetch(`{% url 'delete_order' 0 %}`.replace('/0/', `/${currentOrderId}/`), {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken}
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.querySelector(`tr[data-order-id="${currentOrderId}"]`)?.remove();
+        document.getElementById('deleteModal').style.display = 'none';
+        showToast(`Заказ #${currentOrderId} удалён.`);
+      } else {
+        showToast('Ошибка при удалении заказа', true);
+      }
+    })
+    .catch(() => showToast('Ошибка сети при удалении', true));
+  };
+
+  /* === Статус === */
+  function attachStatusHandlers() {
+    document.querySelectorAll('.status-select').forEach(select => {
+      select.onchange = (e) => {
+        const sel = e.target;
+        const row = sel.closest('tr');
+        const orderId = row?.dataset.orderId;
+        const newStatus = sel.value;
+        if (!orderId) return showToast('Не найден ID заказа', true);
+
+        fetch("{% url 'update_order_status_ajax' %}", {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+          body: JSON.stringify({ order_id: orderId, new_status: newStatus })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            sel.style.backgroundColor = '#dff0d8';
+            setTimeout(() => sel.style.backgroundColor = '', 600);
+            showToast(`Статус заказа #${orderId} обновлён: ${data.status_display}`);
+          } else {
+            showToast('Ошибка при обновлении статуса: ' + (data.error || ''), true);
+          }
+        })
+        .catch(() => showToast('Сетевая ошибка при обновлении статуса', true));
+      };
+    });
+  }
+
+  attachDeleteHandlers();
+  attachStatusHandlers();
+
+  /* === WebSocket для обновления заказов в реальном времени === */
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(`${protocol}://${window.location.host}/ws/printers/`);
+
+  socket.onopen = () => console.log("✅ WS connected");
+
+  socket.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === "new_order") {
+      const tbody = document.querySelector('#orders-table tbody');
+      const row = document.createElement('tr');
+      row.setAttribute('data-order-id', data.order_id);
+      row.innerHTML = `
+        <td>${data.order_id}</td>
+        <td>${data.client}</td>
+        <td>${data.product}</td>
+        <td>${data.book_type || '—'}</td>
+        <td>${data.spreads}</td>
+        <td>${data.comment || '—'}</td>
+        <td>
+          <select class="status-select">
+            <option value="new" ${data.status==='new'?'selected':''}>Новые</option>
+            <option value="accepted" ${data.status==='accepted'?'selected':''}>Принятые</option>
+            <option value="printing" ${data.status==='printing'?'selected':''}>Печатаются</option>
+            <option value="ready" ${data.status==='ready'?'selected':''}>Готовые</option>
+          </select>
+        </td>
+        <td>${data.created_at}</td>
+        <td>
+          <a href="/orders/${data.order_id}/" class="btn btn-secondary" style="font-size:12px;">Просмотреть</a>
+          <button type="button" class="btn btn-danger delete-btn" data-order-id="${data.order_id}" style="font-size:12px;">Удалить</button>
+        </td>
+      `;
+      tbody.prepend(row);
+      attachDeleteHandlers();
+      attachStatusHandlers();
+    }
+  };
+
+  socket.onclose = () => console.log("⚠️ WS closed");
+  socket.onerror = e => console.log("❌ WS error", e);
+
 });
 </script>
+
 {% endblock %}

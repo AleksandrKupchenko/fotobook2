@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="parameters-container">
+  <!-- Левая колонка: стоимость и выбранные параметры -->
+  <div class="price-box">
+    <h3>Общая стоимость</h3>
+    <div id="total-price" class="price-value">0 ₸</div>
+
+    <div class="selected-params">
+      <h4>Вы выбрали:</h4>
+      <p>Тип: <span id="paramType">{{ product }}</span></p>
+      <p>Количество книг: <span id="paramQty">1</span></p>
+      <p>Разворотов / страниц: <span id="paramSpreads">10</span></p>
+      <p>Печать: <span id="paramPrint">Глянец</span></p>
+      <p>Доставка: <span id="paramDelivery">Самовывоз</span></p>
+      <p>Оплата: <span id="paramPayment">Наличные</span></p>
+    </div>
+  </div>
+
+  <!-- Правая колонка: форма -->
+  <div class="form-box">
+    <h2>Параметры — {{ product }}</h2>
+    <form method="post" id="optionsForm">
+      {% csrf_token %}
+
+      <!-- --- Выбор доставки --- -->
+      <div class="form-row">
+        <label>Способ доставки:
+          <select name="delivery_type" onchange="updatePrice()">
+            <option value="pickup">Самовывоз (0 ₸)</option>
+            <option value="courier">Курьер (доставка по городу)</option>
+            <option value="post">Почта / EMS / Посылка</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- --- Выбор способа оплаты --- -->
+      <div class="form-row">
+        <label>Способ оплаты:
+          <select name="payment_method" onchange="updatePrice()">
+            <option value="cash">Наличные при получении</option>
+            <option value="qr">Оплата по QR</option>
+            <option value="online">Онлайн-платёж</option>
+          </select>
+        </label>
+      </div>
+
+      {% if product == 'hard' %}
+        <div class="form-row">
+          <label>Количество книг:
+            <input name="quantity_books" type="range" min="1" max="40" value="1" oninput="updateLabel(this)">
+            <span class="range-value">1</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Кол-во разворотов:
+            <input name="spreads" type="range" min="1" max="30" value="10" oninput="updateLabel(this)">
+            <span class="range-value">10</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Кол-во индивидуальных разворотов:
+            <input name="individual_spreads" type="range" min="0" max="10" value="0" oninput="updateLabel(this)">
+            <span class="range-value">0</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Тип печати:
+            <select name="print_type" onchange="updatePrice()">
+              <option value="gloss">Глянец</option>
+              <option value="matte">Мат</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Комментарий:
+            <textarea name="comment" rows="3"></textarea>
+          </label>
+        </div>
+
+      {% elif product == 'soft' %}
+        <div class="form-row">
+          <label>Количество книг:
+            <input name="quantity_books" type="range" min="1" max="40" value="1" oninput="updateLabel(this)">
+            <span class="range-value">1</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Кол-во страниц:
+            <input name="spreads" type="range" min="4" max="100" value="20" oninput="updateLabel(this)">
+            <span class="range-value">20</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Тип печати:
+            <select name="print_type" onchange="updatePrice()">
+              <option value="gloss">Глянец</option>
+              <option value="matte">Мат</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Комментарий:
+            <textarea name="comment" rows="3"></textarea>
+          </label>
+        </div>
+
+      {% else %}
+        <div class="form-row">
+          <label>Размер:
+            <select name="paper_size" onchange="updatePrice()">
+              <option value="10x15">10x15</option>
+              <option value="13x18">13x18</option>
+              <option value="15x20">15x20</option>
+              <option value="20x30">20x30</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Кол-во фото:
+            <input name="spreads" type="range" min="1" max="200" value="10" oninput="updateLabel(this)">
+            <span class="range-value">10</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Тип печати:
+            <select name="print_type" onchange="updatePrice()">
+              <option value="gloss">Глянец</option>
+              <option value="matte">Мат</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Комментарий:
+            <textarea name="comment" rows="3"></textarea>
+          </label>
+        </div>
+
+        <!-- скрытое поле для передачи выбранного размера -->
+        <input type="hidden" name="paper_size_selected" id="paper_size_selected" value="10x15">
+      {% endif %}
+
+      <button type="submit" class="btn">Далее</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function updateLabel(input) {
+  const label = input.nextElementSibling;
+  if(label) label.textContent = input.value;
+  updatePrice();
+}
+
+function updatePrice() {
+  const form = document.getElementById('optionsForm');
+  if(!form) return;
+
+  const product = "{{ product }}";
+  let total = 0;
+
+  const qty = parseInt(form.querySelector('[name="quantity_books"]')?.value || 1);
+  const spreads = parseInt(form.querySelector('[name="spreads"]')?.value || 0);
+  const print = form.querySelector('[name="print_type"]')?.value || "gloss";
+
+  // --- Стоимость доставки ---
+  const deliveryType = form.querySelector('[name="delivery_type"]')?.value || 'pickup';
+  let deliveryCost = 0;
+  if(deliveryType === 'courier') deliveryCost = 600;
+  else if(deliveryType === 'post') deliveryCost = 1200;
+
+  // --- Общая стоимость ---
+  if (product === 'hard') {
+    total = qty * spreads * 900 + deliveryCost;
+  } else if (product === 'soft') {
+    total = qty * (1900 + spreads * 400) + deliveryCost;
+  } else {
+    const size = form.querySelector('[name="paper_size"]')?.value || '10x15';
+    const prices = { '10x15': 70, '13x18': 150, '15x20': 270, '20x30': 500 };
+    total = spreads * (prices[size] || 0) + deliveryCost;
+
+    const hiddenSize = form.querySelector('#paper_size_selected');
+    if(hiddenSize) hiddenSize.value = size;
+    sessionStorage.setItem('paper_size', size);
+  }
+
+  // --- Отображение выбранных параметров ---
+  document.getElementById('total-price').textContent = total.toLocaleString('ru-RU') + ' ₸';
+  document.getElementById('paramQty').textContent = qty;
+  document.getElementById('paramSpreads').textContent = spreads;
+  document.getElementById('paramPrint').textContent = print === 'gloss' ? 'Глянец' : 'Мат';
+  document.getElementById('paramDelivery').textContent = deliveryType === 'pickup' ? 'Самовывоз' : deliveryType === 'courier' ? 'Курьер' : 'Почта';
+  document.getElementById('paramPayment').textContent = form.querySelector('[name="payment_method"]')?.selectedOptions[0].text;
+}
+
+document.addEventListener('input', updatePrice);
+document.addEventListener('change', updatePrice);
+updatePrice();
+</script>
+
+{% endblock %}

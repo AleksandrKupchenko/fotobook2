@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/upload.css' %}">
+
+<div class="finish-container">
+  <h2 style="text-align:center; margin-bottom: 20px;">Заказ №{{ order.id }} — Подтверждение</h2>
+
+  <!-- Блок сообщений -->
+  {% if messages %}
+    <div id="messages">
+      {% for message in messages %}
+        <div class="toast {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="order-summary">
+    <h3>Информация о заказе</h3>
+    <ul>
+      <li><strong>Пользователь:</strong> {{ order.user.username }}</li>
+      <li><strong>Тип книги:</strong> {{ order.get_book_type_display }}</li>
+      <li><strong>Тип продукта:</strong> {{ order.get_product_type_display }}</li>
+      <li><strong>Количество книг:</strong> {{ order.quantity_books }}</li>
+      <li><strong>Разворотов:</strong> {{ order.spreads }}</li>
+      <li><strong>Индивидуальные развороты:</strong> {{ order.individual_spreads|yesno:"Да,Нет" }}</li>
+      <li><strong>Тип печати:</strong> {{ order.get_print_type_display }}</li>
+      <li><strong>Размер бумаги:</strong> {{ order.get_paper_size_display }}</li>
+      <li><strong>Комментарий:</strong> {{ order.comment|default:"—" }}</li>
+      <li><strong>Доставка:</strong> {{ order.get_delivery_type_display }}</li>
+      <li><strong>Адрес:</strong> {{ order.delivery_address|default:"—" }}</li>
+      <li><strong>Статус оплаты:</strong> {{ order.get_payment_status_display }}</li>
+      <li><strong>Метод оплаты:</strong> {{ order.get_payment_method_display }}</li>
+      <li><strong>Статус заказа:</strong> {{ order.get_status_display }}</li>
+    </ul>
+  </div>
+
+  <div class="price-summary">
+    <h3>Стоимость</h3>
+    <ul>
+      <li><strong>Базовая:</strong> {{ order.base_price }} ₸</li>
+      <li><strong>За развороты:</strong> {{ order.spreads_price }} ₸</li>
+      <li><strong>Доставка:</strong> {{ order.delivery_cost }} ₸</li>
+      <li><strong>Итого:</strong> {{ order.total_price }} ₸</li>
+    </ul>
+  </div>
+
+  <div class="files-summary">
+    <h3>Загруженные файлы</h3>
+    {% if order.files.all %}
+      <div class="file-previews">
+        {% for f in order.files.all %}
+          <div class="file-card">
+            <img src="{{ f.file.url }}" alt="Файл {{ forloop.counter }}" style="max-width:150px; max-height:150px; object-fit:cover; border:1px solid #ccc; border-radius:4px;">
+            <p>Файл {{ forloop.counter }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Файлы не загружены.</p>
+    {% endif %}
+  </div>
+
+  <div style="text-align:center; margin-top:30px;">
+    <a href="{% url 'dashboard' %}" class="btn">Вернуться в личный кабинет</a>
+  </div>
+</div>
+
+<style>
+.finish-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Inter', sans-serif;
+}
+.order-summary, .price-summary, .files-summary {
+    margin-bottom: 30px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+.order-summary ul, .price-summary ul {
+    list-style: none;
+    padding-left: 0;
+}
+.order-summary li, .price-summary li {
+    margin-bottom: 8px;
+}
+.file-previews {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.file-card {
+    text-align: center;
+}
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #0077cc;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+}
+.btn:hover {
+    background-color: #005fa3;
+}
+
+/* Всплывающие уведомления */
+.toast {
+    padding: 10px 20px;
+    margin: 10px auto;
+    max-width: 600px;
+    border-radius: 6px;
+    text-align: center;
+    color: #fff;
+    font-weight: 500;
+}
+.toast.success { background-color: #28a745; }
+.toast.error { background-color: #dc3545; }
+.toast.info { background-color: #0077cc; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const messages = document.querySelectorAll('.toast');
+    messages.forEach(msg => {
+        setTimeout(() => msg.style.display = 'none', 4000);
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2 style="text-align:center; margin-bottom: 20px;">Выберите вариант</h2>
+
+<div class="product-grid">
+  <a href="{% url 'product_options' 'hard' %}" class="product-card">
+    <img src="{% static 'images/opts/hard.jpg' %}" alt="Фотокнига — твёрдый переплет">
+    <div>Фотокнига — твёрдый переплет</div>
+  </a>
+  <a href="{% url 'product_options' 'soft' %}" class="product-card">
+    <img src="{% static 'images/opts/soft.jpg' %}" alt="Фотокнига — мягкие страницы">
+    <div>Фотокнига — мягкие страницы</div>
+  </a>
+  <a href="{% url 'product_options' 'print' %}" class="product-card">
+    <img src="{% static 'images/opts/print.jpg' %}" alt="Печать на фотобумаге">
+    <div>Печать на фотобумаге</div>
+  </a>
+</div>
+
+<style>
+.product-grid {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 40px; /* расстояние между карточками */
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.product-card {
+  text-align: center;
+  text-decoration: none;
+  color: #222;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card img {
+  width: 200px;   /* уменьшено в 2 раза от стандартных 400px */
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %}

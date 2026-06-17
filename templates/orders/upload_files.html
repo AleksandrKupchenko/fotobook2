@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/upload.css' %}">
+
+<div class="upload-container">
+  <h2>Загрузка файлов — заказ №{{ order.id }}</h2>
+
+  <!-- Скрытые поля для JS -->
+  <input type="hidden" id="defaultSpreads" value="{{ default_spreads }}">
+  <input type="hidden" id="productType" value="{{ product_type }}">
+  <input type="hidden" id="photoSize" value="{{ order.paper_size|default:'' }}">
+
+  <form method="post" enctype="multipart/form-data" id="uploadForm">
+    {% csrf_token %}
+
+    {% if product_type == 'print' %}
+      <!-- Печать на фотобумаге -->
+      <div class="photo-upload-block">
+        <h3 class="photo-upload-title">Фотографии для печати</h3>
+        <div class="photo-upload-area">
+          <input type="file"
+                 id="file-1-photo-0"
+                 name="file-book-1-photo-0"
+                 accept="image/*"
+                 class="file-input"
+                 multiple>
+          <div class="preview-scroll-wrapper">
+            <div class="preview-grid wide" id="preview-1-photo-0"></div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <!-- Фотокниги -->
+      {% for book in books %}
+        <div class="book-card" data-book="{{ book.index }}">
+          {% if book.slots %}
+            <div class="book-header">
+              <h3>Книга {{ book.index }}</h3>
+              <button type="button" class="delete-book">Удалить</button>
+            </div>
+          {% endif %}
+
+          <div class="slots">
+            {% for slot in book.slots %}
+              <div class="slot-item">
+                <h4>
+                  {% if slot.slot_type == 'cover' %}Обложка
+                  {% elif slot.slot_type == 'spread' %}Разворот {{ slot.slot_index }}
+                  {% else %}{{ slot.slot_type|capfirst }} {{ slot.slot_index }}
+                  {% endif %}
+                </h4>
+
+                <input type="file"
+                       id="file-{{ book.index }}-{{ slot.slot_type }}-{{ slot.slot_index }}"
+                       name="file-book-{{ book.index }}-{{ slot.slot_type }}-{{ slot.slot_index }}"
+                       accept="image/*"
+                       class="file-input">
+
+                <div class="preview-grid" id="preview-{{ book.index }}-{{ slot.slot_type }}-{{ slot.slot_index }}">
+                  {% for f in book.existing %}
+                    {% if f.slot_type == slot.slot_type and f.slot_index == slot.slot_index %}
+                      <div class="preview-thumb">
+                        <img src="{{ f.file.url }}" alt="">
+                        <span>{{ f.file.name }}</span>
+                        <button type="button" class="remove-thumb">&times;</button>
+                        <div class="error-overlay" style="display:none">
+                          <div class="error-text">Размер не соответствует</div>
+                          <div class="size-hint"></div>
+                        </div>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="actions">
+      {% if product_type != 'print' %}
+        <button type="button" id="addBookBtn">Добавить книгу</button>
+      {% endif %}
+      <button type="submit" class="btn">Загрузить и перейти к оплате</button>
+      
+    </div>
+
+    <div class="progress-wrapper" style="display:none;">
+      <progress id="uploadProgress" value="0" max="100"></progress>
+      <span id="progressText">0%</span>
+    </div>
+
+    <div id="uploadMessage"></div>
+  </form>
+</div>
+
+<script src="{% static 'js/upload.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const downloadBtn = document.getElementById('downloadAllBtn');
+
+  downloadBtn.addEventListener('click', () => {
+    const filesToDownload = [];
+    document.querySelectorAll('.slot-item').forEach(slot => {
+      slot.querySelectorAll('.preview-thumb img').forEach(img => {
+        filesToDownload.push(img.src);
+      });
+    });
+
+    filesToDownload.forEach(src => {
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = src.split('/').pop();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  });
+});
+</script>
+
+{% endblock %}
